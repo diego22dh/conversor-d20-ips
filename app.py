@@ -12,6 +12,7 @@ import pandas as pd
 import streamlit as st
 
 from conversor import config, escritor
+from conversor.acceso import requerir_login
 from conversor.conceptos import (cargar_conceptos, conceptos_sin_correspondencia, guardar_conceptos_empleador,
                                  origen_para_empleador, plantilla_correspondencia)
 from conversor.informe import informe_excel, totales_por_tipo
@@ -23,6 +24,8 @@ from conversor.transformador import Parametros
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 st.set_page_config(page_title="Conversor Nacional → IPS D20", page_icon="📄", layout="wide")
+requerir_login()
+
 st.title("Conversor de Remuneraciones — Nacional Software a IPS D20 Digital")
 st.caption("Genera el SALARIO.TXT (dentro del ZIP) que se sube manualmente a SAP – Información salarial – Enviar salarios. "
            "La aplicación no se conecta con el IPS.")

@@ -8,5 +8,6 @@ if not exist ".venv\Scripts\python.exe" (
     call ".venv\Scripts\python.exe" -m pip install --upgrade pip
     call ".venv\Scripts\python.exe" -m pip install -r requirements.txt
 )
+set APP_SIN_LOGIN=1
 ".venv\Scripts\python.exe" -m streamlit run app.py
 pause

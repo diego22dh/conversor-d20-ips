@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.streamlit/secrets.toml
+data/padron_agentes.xlsx
+data/parametros.json
+data/conceptos/

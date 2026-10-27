@@ -76,12 +76,12 @@ def leer_excel(origen: str | Path | BinaryIO) -> pd.DataFrame:
     df = pd.read_excel(origen, header=None, dtype=object)
     if df.shape[1] < 15:
         raise ValueError(f"El archivo tiene {df.shape[1]} columnas y se esperaban 15. "
-                         "¿Es el informe 'Recibos Agrupados' de Nacional Software?")
+                         "¿Es el informe 'Recibos Agrupados por Empleado' de Nacional Software?")
     df = df.iloc[:, :15]
     df.columns = COLUMNAS
     enc = [str(x).strip().lower() for x in df.iloc[0, [0, 2, 3, 9, 10]]]
     if enc != ["legajo", "cuil", "período", "concepto", "descripción"]:
-        raise ValueError("Los encabezados no coinciden con el informe 'Recibos Agrupados' "
+        raise ValueError("Los encabezados no coinciden con el informe 'Recibos Agrupados por Empleado' "
                          f"(se leyó {enc}).")
     return df.iloc[1:].reset_index(drop=True)
 

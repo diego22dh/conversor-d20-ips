@@ -13,6 +13,7 @@ import streamlit as st
 
 from conversor import config, escritor
 from conversor.acceso import requerir_login
+from conversor.antiguedad import aplicar_antiguedad, cargar_antiguedad, plantilla_antiguedad
 from conversor.conceptos import (cargar_conceptos, conceptos_sin_correspondencia, guardar_conceptos_empleador,
                                  origen_para_empleador, plantilla_correspondencia)
 from conversor.informe import informe_excel, totales_por_tipo
@@ -51,8 +52,14 @@ def _xlsx_bytes(df: pd.DataFrame) -> bytes:
 
 # ---------------------------------------------------------------- archivo de remuneraciones
 st.subheader("1. Archivo de remuneraciones")
-subido = st.file_uploader("Informe «Recibos Agrupados» exportado desde Nacional Software (.xls / .xlsx)",
+subido = st.file_uploader("Informe «Recibos Agrupados por Empleado» exportado desde Nacional Software (.xls / .xlsx)",
                           type=["xls", "xlsx"])
+ant_subido = st.file_uploader("Listado de empleados con antigüedad (opcional, .xls / .xlsx)", type=["xls", "xlsx"],
+                              key="antiguedad_up",
+                              help="Con legajo o CUIL y la antigüedad docente (años y meses). Opcionalmente antigüedad IPS y de otras "
+                                   "cajas, o fecha de ingreso docente. El instructivo exige estos campos en cada línea del TXT.")
+st.download_button("Descargar planilla de ejemplo del listado de antigüedad", _xlsx_bytes(plantilla_antiguedad()),
+                   "listado_antiguedad_ejemplo.xlsx", XLSX)
 lectura, datos, error_lectura = None, None, None
 if subido is not None:
     datos = subido.getvalue()
@@ -194,6 +201,21 @@ if cargado is not None:
         st.rerun()
 
 padron = completar_padron(lectura.recibos, st.session_state["padron_base"])
+hall_ant, ant_huella = [], ""
+if ant_subido is not None:
+    try:
+        ant_bytes = ant_subido.getvalue()
+        ant_huella = hashlib.md5(ant_bytes).hexdigest()
+        listado_ant, hall_ant = cargar_antiguedad(io.BytesIO(ant_bytes), periodo)
+        if not any(h.nivel == "ERROR" for h in hall_ant):
+            padron, h2, n_ant = aplicar_antiguedad(padron, listado_ant, lectura.recibos)
+            hall_ant += h2
+            st.success(f"Antigüedad del listado aplicada a {n_ant} de {len(lectura.recibos)} legajos.")
+    except ValueError as e:
+        hall_ant = []
+        st.error(f"No pude usar el listado de antigüedad: {e}")
+    for h in hall_ant:
+        {"ERROR": st.error, "ADVERTENCIA": st.warning}.get(h.nivel, st.info)(f"{h.legajo} · {h.campo}: {h.mensaje}")
 for c in NUMERICAS + ["dias_inasistencia"]:
     padron[c] = pd.to_numeric(padron[c], errors="coerce")
 padron["valor_prueba"] = padron["valor_prueba"].map(lambda v: "SI" if str(v).upper() == "SI" else "NO")
@@ -226,7 +248,7 @@ c2.download_button("Descargar padrón", _xlsx_bytes(padron_edit), "padron_agente
 
 # ---------------------------------------------------------------- procesar
 st.subheader("4. Procesar")
-firma = hashlib.md5(repr((datos, p, padron_edit.to_csv(), conceptos_huella)).encode()).hexdigest()
+firma = hashlib.md5(repr((datos, p, padron_edit.to_csv(), conceptos_huella, ant_huella)).encode()).hexdigest()
 if st.button("Procesar archivo", type="primary", disabled=len(faltantes) > 0):
     with st.spinner("Procesando…"):
         try:

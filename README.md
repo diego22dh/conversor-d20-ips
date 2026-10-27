@@ -1,6 +1,6 @@
 # Conversor de Remuneraciones — Nacional Software a IPS D20 Digital
 
-Aplicación Streamlit que toma el informe **«Recibos Agrupados»** de Nacional Software y genera el
+Aplicación Streamlit que toma el informe **«Recibos Agrupados por Empleado»** de Nacional Software y genera el
 `SALARIO.TXT` (dentro del ZIP) que se sube **manualmente** a SAP › Información salarial › Enviar salarios.
 No se conecta con el IPS.
 
@@ -15,6 +15,14 @@ Pruebas: `python -m pytest`
 1. En la barra lateral elegí con desplegables: código de empleador, período (AAAA/MM), tipo de liquidación
    (N normal / A adicional-SAC), tipo de DDJJ y número de liquidación.
 2. Subí el informe de Nacional (.xls o .xlsx). El período del informe se preselecciona.
+   Opcionalmente subí también el **listado de empleados con antigüedad** (.xls/.xlsx): columnas Legajo y/o CUIL y
+   Antigüedad docente (años y meses); opcionales antigüedad IPS y de otras cajas (años/meses), o fecha de ingreso
+   docente (se calcula hasta fin de período, con advertencia). Se aplica sobre el padrón; los legajos que no estén
+   en el listado conservan lo que tenga el padrón. Si el listado trae solo CUIL, todos los legajos de esa persona
+   reciben la misma antigüedad.
+   Se reconoce el **Listado de Empleados de Nacional**: con la columna *Fecha Antiguedad* (preferida sobre *Fecha
+   Ingreso*) la antigüedad docente se calcula hasta el último día del período elegido (años y meses completos); si
+   trae solo *Antiguedad* en años enteros, se informa con 00 meses. IPS y otras cajas no se modifican.
 3. **Correspondencia de conceptos del colegio** (paso 2 en pantalla): cada colegio tiene sus propios códigos de
    liquidación. Cargá el archivo (.xls/.xlsx) con las columnas *código de liquidación*, *tipo de concepto IPS*
    (RCA/RSA/AFA/DPS/DAS/DES) y *concepto IPS (código SAP)*; descripción y columna son opcionales. Los

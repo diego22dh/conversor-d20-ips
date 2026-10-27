@@ -69,3 +69,18 @@ def test_sin_correspondencia(tmp_path):
     usados = {l.concepto for r in lect.recibos for l in r.lineas}
     falt = conceptos_sin_correspondencia(lect.recibos, df)
     assert len(falt) == len(usados - set(df.codigo))
+
+
+def test_login_falla_cerrado_y_valida_clave(monkeypatch):
+    from streamlit.testing.v1 import AppTest
+    monkeypatch.delenv("APP_SIN_LOGIN", raising=False)
+    monkeypatch.delenv("APP_PASSWORD", raising=False)
+    at = AppTest.from_file(str(__import__("pathlib").Path(__file__).resolve().parent.parent / "app.py"), default_timeout=30).run()
+    assert any("contraseña configurada" in e.value for e in at.error)
+    monkeypatch.setenv("APP_PASSWORD", "clave123")
+    at = AppTest.from_file(str(__import__("pathlib").Path(__file__).resolve().parent.parent / "app.py"), default_timeout=30).run()
+    assert not at.file_uploader
+    at.text_input[0].set_value("mala"); at.button[0].click().run()
+    assert not at.file_uploader and at.error
+    at.text_input[0].set_value("clave123"); at.button[0].click().run()
+    assert at.file_uploader

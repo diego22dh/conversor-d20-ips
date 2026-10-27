@@ -40,6 +40,7 @@ NUMEROS_LIQUIDACION = [f"{n:02d}" for n in range(1, 21)]
 # concepto IPS 700000. La regla se aplica por CÓDIGO IPS (no por código de liquidación), porque
 # los códigos de liquidación cambian de un colegio a otro.
 IPS_OBRA_SOCIAL = 700000
+ANTIGUEDAD_DIR = DATA_DIR / "antiguedad"        # listado de fechas de antigüedad por colegio
 CONCEPTOS_DIR = DATA_DIR / "conceptos"          # un listado por colegio: <código de empleador>.xlsx
 
 # Códigos IPS válidos según el instructivo (para advertir sobre códigos desconocidos).

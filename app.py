@@ -13,7 +13,8 @@ import streamlit as st
 
 from conversor import config, escritor
 from conversor.acceso import requerir_login
-from conversor.antiguedad import aplicar_antiguedad, cargar_antiguedad, plantilla_antiguedad
+from conversor.antiguedad import (aplicar_antiguedad, cargar_antiguedad, guardar_listado, plantilla_antiguedad,
+                                  ruta_guardada as ruta_antiguedad)
 from conversor.conceptos import (cargar_conceptos, conceptos_sin_correspondencia, guardar_conceptos_empleador,
                                  origen_para_empleador, plantilla_correspondencia)
 from conversor.informe import informe_excel, totales_por_tipo
@@ -54,11 +55,12 @@ def _xlsx_bytes(df: pd.DataFrame) -> bytes:
 st.subheader("1. Archivo de remuneraciones")
 subido = st.file_uploader("Informe «Recibos Agrupados por Empleado» exportado desde Nacional Software (.xls / .xlsx)",
                           type=["xls", "xlsx"])
-ant_subido = st.file_uploader("Listado de empleados con antigüedad (opcional, .xls / .xlsx)", type=["xls", "xlsx"],
+ant_subido = st.file_uploader("Listado de empleados con fecha de antigüedad (opcional, .xls / .xlsx)", type=["xls", "xlsx"],
                               key="antiguedad_up",
-                              help="Con legajo o CUIL y la antigüedad docente (años y meses). Opcionalmente antigüedad IPS y de otras "
-                                   "cajas, o fecha de ingreso docente. El instructivo exige estos campos en cada línea del TXT.")
-st.download_button("Descargar planilla de ejemplo del listado de antigüedad", _xlsx_bytes(plantilla_antiguedad()),
+                              help="Listado de empleados de Nacional con legajo y «Fecha Antiguedad». La app calcula los años y meses "
+                                   "hasta el fin del período elegido, así que se actualiza sola de un mes a otro. Se puede guardar "
+                                   "una vez por colegio. El instructivo exige la antigüedad en cada línea del TXT.")
+st.download_button("Descargar modelo del listado (legajo + fecha de antigüedad)", _xlsx_bytes(plantilla_antiguedad()),
                    "listado_antiguedad_ejemplo.xlsx", XLSX)
 lectura, datos, error_lectura = None, None, None
 if subido is not None:
@@ -202,15 +204,26 @@ if cargado is not None:
 
 padron = completar_padron(lectura.recibos, st.session_state["padron_base"])
 hall_ant, ant_huella = [], ""
+ant_bytes, ant_nombre, ant_guardado = None, None, False
 if ant_subido is not None:
+    ant_bytes, ant_nombre = ant_subido.getvalue(), ant_subido.name
+else:
+    _ruta_ant = ruta_antiguedad(codigo)
+    if _ruta_ant is not None:
+        ant_bytes, ant_nombre, ant_guardado = _ruta_ant.read_bytes(), _ruta_ant.name, True
+if ant_bytes is not None:
     try:
-        ant_bytes = ant_subido.getvalue()
-        ant_huella = hashlib.md5(ant_bytes).hexdigest()
+        ant_huella = hashlib.md5(ant_bytes).hexdigest() + periodo
         listado_ant, hall_ant = cargar_antiguedad(io.BytesIO(ant_bytes), periodo)
         if not any(h.nivel == "ERROR" for h in hall_ant):
             padron, h2, n_ant = aplicar_antiguedad(padron, listado_ant, lectura.recibos)
             hall_ant += h2
-            st.success(f"Antigüedad del listado aplicada a {n_ant} de {len(lectura.recibos)} legajos.")
+            origen_ant = f"listado guardado de {codigo}" if ant_guardado else f"archivo «{ant_nombre}»"
+            st.success(f"Antigüedad calculada al fin del período {periodo} ({origen_ant}): aplicada a {n_ant} de "
+                       f"{len(lectura.recibos)} legajos.")
+            if not ant_guardado and st.button(f"Guardar este listado como el de {codigo}"):
+                guardar_listado(codigo, ant_nombre, ant_bytes)
+                st.rerun()
     except ValueError as e:
         hall_ant = []
         st.error(f"No pude usar el listado de antigüedad: {e}")

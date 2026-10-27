@@ -15,14 +15,13 @@ Pruebas: `python -m pytest`
 1. En la barra lateral elegí con desplegables: código de empleador, período (AAAA/MM), tipo de liquidación
    (N normal / A adicional-SAC), tipo de DDJJ y número de liquidación.
 2. Subí el informe de Nacional (.xls o .xlsx). El período del informe se preselecciona.
-   Opcionalmente subí también el **listado de empleados con antigüedad** (.xls/.xlsx): columnas Legajo y/o CUIL y
-   Antigüedad docente (años y meses); opcionales antigüedad IPS y de otras cajas (años/meses), o fecha de ingreso
-   docente (se calcula hasta fin de período, con advertencia). Se aplica sobre el padrón; los legajos que no estén
-   en el listado conservan lo que tenga el padrón. Si el listado trae solo CUIL, todos los legajos de esa persona
-   reciben la misma antigüedad.
-   Se reconoce el **Listado de Empleados de Nacional**: con la columna *Fecha Antiguedad* (preferida sobre *Fecha
-   Ingreso*) la antigüedad docente se calcula hasta el último día del período elegido (años y meses completos); si
-   trae solo *Antiguedad* en años enteros, se informa con 00 meses. IPS y otras cajas no se modifican.
+   Opcionalmente subí también el **listado de empleados de Nacional con *Fecha Antiguedad*** (.xls/.xlsx; columna
+   Legajo + Fecha Antiguedad, hay un modelo para bajar). La app calcula la antigüedad docente (años y meses
+   completos) desde esa fecha hasta el último día del período elegido, así que **se actualiza sola mes a mes**. El
+   botón «Guardar este listado como el de <colegio>» lo deja en `data/antiguedad/` y se usa automáticamente en las
+   próximas liquidaciones (para actualizarlo, subí uno nuevo y guardalo). Los legajos que no estén en el listado
+   conservan lo del padrón. También acepta años/meses ya calculados, o *Antiguedad* en años enteros (00 meses).
+   IPS y otras cajas no se modifican. En Streamlit Cloud el disco es efímero: lo guardado se pierde al reiniciar.
 3. **Correspondencia de conceptos del colegio** (paso 2 en pantalla): cada colegio tiene sus propios códigos de
    liquidación. Cargá el archivo (.xls/.xlsx) con las columnas *código de liquidación*, *tipo de concepto IPS*
    (RCA/RSA/AFA/DPS/DAS/DES) y *concepto IPS (código SAP)*; descripción y columna son opcionales. Los

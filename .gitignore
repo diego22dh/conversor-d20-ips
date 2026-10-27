@@ -5,3 +5,4 @@ __pycache__/
 data/padron_agentes.xlsx
 data/parametros.json
 data/conceptos/
+data/antiguedad/

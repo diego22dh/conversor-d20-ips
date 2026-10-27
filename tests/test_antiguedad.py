@@ -62,3 +62,21 @@ def test_listado_nacional_con_fecha_antiguedad(tmp_path):
     assert list(df.legajo) == ["1001", "1002"]
     assert list(zip(df.antig_docente_anios, df.antig_docente_meses)) == [(7, 7), (10, 7)]
     assert not [h for h in hall if h.nivel == "ERROR"]
+
+
+def test_guardar_listado_por_colegio(tmp_path, monkeypatch):
+    from conversor import config
+    from conversor.antiguedad import guardar_listado, ruta_guardada
+    monkeypatch.setattr(config, "ANTIGUEDAD_DIR", tmp_path / "ant")
+    assert ruta_guardada("E1") is None
+    guardar_listado("E1", "Listado.xls", b"abc")
+    assert ruta_guardada("E1").suffix == ".xls"
+    guardar_listado("E1", "otro.xlsx", b"def")
+    assert ruta_guardada("E1").suffix == ".xlsx" and not (tmp_path / "ant" / "E1.xls").exists()
+
+
+def test_modelo_se_puede_cargar(tmp_path):
+    from conversor.antiguedad import plantilla_antiguedad
+    p = tmp_path / "m.xlsx"; plantilla_antiguedad().to_excel(p, index=False)
+    df, hall = cargar_antiguedad(p, "2026/09")
+    assert list(df.legajo) == ["1001", "1002"] and not [h for h in hall if h.nivel == "ERROR"]

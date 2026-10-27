@@ -14,6 +14,7 @@ from typing import BinaryIO
 
 import pandas as pd
 
+from . import config
 from .conceptos import _norm
 from .lector import normalizar_cuil
 from .modelos import Hallazgo, Recibo
@@ -43,10 +44,28 @@ ALIAS = {
 
 
 def plantilla_antiguedad() -> pd.DataFrame:
+    """Modelo: legajo + fecha de antigüedad docente. La app calcula años y meses en cada período."""
     return pd.DataFrame([
-        {"Legajo": "1001", "CUIL": "20-12345678-6", "Antigüedad docente años": 12, "Antigüedad docente meses": 3,
-         "Antigüedad IPS años": 12, "Antigüedad IPS meses": 3, "Antigüedad otras cajas años": 0,
-         "Antigüedad otras cajas meses": 0}])
+        {"Legajo": "1001", "Apellido": "PEREZ", "Nombre": "JUAN", "Fecha Antiguedad": "15/03/2014"},
+        {"Legajo": "1002", "Apellido": "GOMEZ", "Nombre": "ANA", "Fecha Antiguedad": "02/08/2019"}])
+
+
+def ruta_guardada(codigo: str) -> Path | None:
+    """Listado de fechas de antigüedad guardado para un colegio (conserva la extensión original)."""
+    for ext in (".xls", ".xlsx"):
+        p = config.ANTIGUEDAD_DIR / f"{codigo}{ext}"
+        if p.exists():
+            return p
+    return None
+
+
+def guardar_listado(codigo: str, nombre_archivo: str, datos: bytes) -> Path:
+    config.ANTIGUEDAD_DIR.mkdir(parents=True, exist_ok=True)
+    for ext in (".xls", ".xlsx"):
+        (config.ANTIGUEDAD_DIR / f"{codigo}{ext}").unlink(missing_ok=True)
+    destino = config.ANTIGUEDAD_DIR / f"{codigo}{Path(nombre_archivo).suffix.lower() or '.xlsx'}"
+    destino.write_bytes(datos)
+    return destino
 
 
 def _entero(v):

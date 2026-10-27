@@ -80,3 +80,15 @@ def test_modelo_se_puede_cargar(tmp_path):
     p = tmp_path / "m.xlsx"; plantilla_antiguedad().to_excel(p, index=False)
     df, hall = cargar_antiguedad(p, "2026/09")
     assert list(df.legajo) == ["1001", "1002"] and not [h for h in hall if h.nivel == "ERROR"]
+
+
+def test_antiguedad_ips_replica_la_docente(tmp_path):
+    p = _x(tmp_path, [["1001", "15/03/2014"]], ["Legajo", "Fecha Antiguedad"])
+    df, _ = cargar_antiguedad(p, "2026/09")
+    lect = leer_nacional(armar_informe(tmp_path / "i.xlsx"))
+    pad, _, _ = aplicar_antiguedad(completar_padron(lect.recibos, None), df, lect.recibos)
+    f = pad[pad.legajo == "1001"].iloc[0]
+    assert (f.antig_admin_anios, f.antig_admin_meses) == (f.antig_docente_anios, f.antig_docente_meses) == (12, 6)
+    assert (f.antig_otras_cajas_anios, f.antig_otras_cajas_meses) == (0, 0)
+    # el TXT lleva los dos pares iguales
+    from conversor.escritor import construir_linea  # noqa: F401

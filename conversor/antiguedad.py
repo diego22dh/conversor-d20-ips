@@ -157,11 +157,11 @@ def cargar_antiguedad(origen: str | Path | BinaryIO, periodo: str | None = None)
     if simple:
         hall.append(Hallazgo("ADVERTENCIA", "varios", "Antigüedad docente",
                              "El listado trae la antigüedad en años enteros (sin meses): se informa como antigüedad "
-                             "docente con 00 meses. La antigüedad IPS y de otras cajas no se modifica."))
+                             "docente con 00 meses. La antigüedad IPS se replica con la docente; la de otras cajas no se modifica."))
     if not con_antig and not simple:
         hall.append(Hallazgo("ADVERTENCIA", "varios", "Antigüedad docente",
                              "La antigüedad docente se calculó desde la fecha de antigüedad (o de ingreso) hasta el "
-                             "último día del período (años y meses completos). Confirmá que coincida con SAP/IPS."))
+                             "último día del período (años y meses completos) y se replica en la antigüedad IPS. Confirmá que coincida con SAP/IPS."))
     d = df[df["legajo"] != ""]["legajo"]
     for v in d[d.duplicated()].unique():
         hall.append(Hallazgo("ERROR", v, "legajo", "Aparece repetido en el listado de antigüedad."))
@@ -189,6 +189,11 @@ def aplicar_antiguedad(padron: pd.DataFrame, listado: pd.DataFrame, recibos: lis
         for c in cols:
             if c in fila and not pd.isna(fila[c]):
                 padron.loc[idx, c] = fila[c]
+        # La antigüedad IPS replica la docente, salvo que el listado traiga la IPS propia.
+        if not any(c in listado.columns for c in ("antig_admin_anios", "antig_admin_meses")):
+            for d, i in (("antig_docente_anios", "antig_admin_anios"), ("antig_docente_meses", "antig_admin_meses")):
+                if d in fila and not pd.isna(fila[d]):
+                    padron.loc[idx, i] = fila[d]
         aplicados += 1
     if sin:
         hall.append(Hallazgo("ADVERTENCIA", "varios" if len(sin) > 1 else sin[0], "Antigüedad",

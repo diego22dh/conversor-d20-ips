@@ -21,7 +21,7 @@ Pruebas: `python -m pytest`
    botón «Guardar este listado como el de <colegio>» lo deja en `data/antiguedad/` y se usa automáticamente en las
    próximas liquidaciones (para actualizarlo, subí uno nuevo y guardalo). Los legajos que no estén en el listado
    conservan lo del padrón. También acepta años/meses ya calculados, o *Antiguedad* en años enteros (00 meses).
-   IPS y otras cajas no se modifican. En Streamlit Cloud el disco es efímero: lo guardado se pierde al reiniciar.
+   La antigüedad **IPS replica la docente** (salvo que el listado traiga la IPS propia); otras cajas no se modifica. En Streamlit Cloud el disco es efímero: lo guardado se pierde al reiniciar.
 3. **Correspondencia de conceptos del colegio** (paso 2 en pantalla): cada colegio tiene sus propios códigos de
    liquidación. Cargá el archivo (.xls/.xlsx) con las columnas *código de liquidación*, *tipo de concepto IPS*
    (RCA/RSA/AFA/DPS/DAS/DES) y *concepto IPS (código SAP)*; descripción y columna son opcionales. Los

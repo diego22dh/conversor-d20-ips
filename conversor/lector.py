@@ -97,6 +97,8 @@ def _buscar_corte_totales(df: pd.DataFrame, ultimo_header: int) -> int | None:
     def sumas(sub: pd.DataFrame) -> dict:
         acc: dict = defaultdict(lambda: [CERO, CERO, CERO])
         for r in sub.itertuples():
+            if _vacio(r.concepto):
+                continue
             try:
                 c = int(float(r.concepto))
             except (TypeError, ValueError):
@@ -107,20 +109,27 @@ def _buscar_corte_totales(df: pd.DataFrame, ultimo_header: int) -> int | None:
                     acc[c][i] += v
         return {k: tuple(v) for k, v in acc.items()}
 
-    for i in range(ultimo_header + 2, n):
-        cola = df.iloc[i:]
-        if cola.legajo.notna().any():
-            continue
-        # El bloque de totales trae cada concepto una sola vez y en orden ascendente. Esto evita
-        # adelantar el corte cuando el último recibo termina con líneas en cero (suman igual).
-        try:
-            codigos = [int(float(c)) for c in cola.concepto]
-        except (TypeError, ValueError):
-            continue
-        if any(b <= a for a, b in zip(codigos, codigos[1:])):
-            continue
-        if sumas(df.iloc[:i]) == sumas(cola) and sumas(cola):
-            return i
+    # Dos pasadas: 1) códigos estrictamente ascendentes (como sale de Nacional); 2) códigos sin repetir.
+    # En ambas, las filas sin código de concepto (p. ej. la fila de total general) se ignoran.
+    for estricta in (True, False):
+        for i in range(ultimo_header + 2, n):
+            cola = df.iloc[i:]
+            if cola.legajo.notna().any():
+                continue
+            cola = cola[~cola.concepto.map(_vacio)]
+            if cola.empty:
+                continue
+            try:
+                codigos = [int(float(c)) for c in cola.concepto]
+            except (TypeError, ValueError):
+                continue
+            if estricta:
+                if any(b <= a for a, b in zip(codigos, codigos[1:])):
+                    continue
+            elif len(set(codigos)) != len(codigos):
+                continue
+            if sumas(df.iloc[:i]) == sumas(cola) and sumas(cola):
+                return i
     return None
 
 

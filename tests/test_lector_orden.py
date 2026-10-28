@@ -48,3 +48,35 @@ def test_recibo_que_no_cierra_con_su_cabecera_es_error(tmp_path):
     lect = leer_nacional(_informe(tmp_path / "i.xlsx"))
     lect.recibos[0].lineas.pop()          # falta el presentismo
     assert any(h.nivel == "ERROR" and h.campo == "Totales del recibo" for h in validar_recibos(lect.recibos))
+
+
+def _con_bloque(path, ascendente=True, total_general=True):
+    """Último recibo con conceptos desordenados + bloque de totales por concepto + fila de total general."""
+    _informe(path, con_total_general=False)
+    df = pd.read_excel(path, header=None)
+    det = df.iloc[1:]
+    por = {}
+    for r in det.itertuples(index=False):
+        c = r[9]
+        if pd.isna(c):
+            continue
+        t = por.setdefault(c, [r[10], r[11], 0, 0, 0])
+        for k, v in zip((2, 3, 4), (r[12], r[13], r[14])):
+            if not pd.isna(v):
+                t[k] += v
+    claves = sorted(por) if ascendente else list(por)
+    filas = [[None] * 9 + [c, por[c][0], por[c][1], por[c][2] or None, por[c][3] or None, por[c][4] or None] for c in claves]
+    if total_general:
+        filas.append([None] * 9 + [None, None, None, 1407419.97, 30709, 267409.8])
+    pd.concat([df, pd.DataFrame(filas, columns=df.columns)]).to_excel(path, header=False, index=False)
+    return path
+
+
+def test_bloque_de_totales_con_fila_de_total_general(tmp_path):
+    lect = leer_nacional(_con_bloque(tmp_path / "a.xlsx"))
+    assert len(lect.recibos[0].lineas) == 10 and lect.totales_control
+
+
+def test_bloque_de_totales_en_cualquier_orden(tmp_path):
+    lect = leer_nacional(_con_bloque(tmp_path / "b.xlsx", ascendente=False))
+    assert len(lect.recibos[0].lineas) == 10 and lect.totales_control

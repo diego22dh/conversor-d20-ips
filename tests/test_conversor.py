@@ -102,7 +102,7 @@ def test_lectura_excluye_bloque_de_totales(informe):
 def test_lectura_sin_totales(tmp_path):
     lec = leer_nacional(armar_informe(tmp_path / "x.xlsx", con_totales=False))
     assert lec.totales_control is None and len(lec.recibos) == 3
-    assert any("no trae bloque de totales" in h.mensaje for h in lec.hallazgos)
+    assert any("bloque de totales" in h.mensaje for h in lec.hallazgos)
 
 
 def test_lectura_rechaza_archivo_ajeno(tmp_path):

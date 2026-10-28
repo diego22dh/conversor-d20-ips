@@ -134,24 +134,11 @@ def leer_nacional(origen: str | Path | BinaryIO) -> ResultadoLectura:
     corte = _buscar_corte_totales(df, idx_headers[-1])
     totales_control = None
     if corte is None:
-        # Plan B: el bloque de totales empieza donde el código de concepto "se reinicia".
-        previo = None
-        for i in range(idx_headers[-1] + 1, len(df)):
-            try:
-                c = int(float(df.concepto[i]))
-            except (TypeError, ValueError):
-                continue
-            if previo is not None and c <= previo:
-                corte = i
-                hallazgos.append(Hallazgo("ADVERTENCIA", "", "Totales",
-                                          "Se detectó un bloque de totales al final del informe, pero no coincide con "
-                                          "la suma del detalle. Se lo excluyó del archivo; revisar el informe de origen."))
-                break
-            previo = c
-        if corte is None:
-            hallazgos.append(Hallazgo("ADVERTENCIA", "", "Totales",
-                                      "El informe no trae bloque de totales por concepto: no se puede hacer el "
-                                      "control cruzado contra el total del informe."))
+        # No se corta nada "por las dudas": un corte equivocado descarta líneas reales del último recibo.
+        hallazgos.append(Hallazgo("ADVERTENCIA", "", "Totales",
+                                  "El informe no trae un bloque de totales por concepto que coincida con el detalle: "
+                                  "no se hace el control cruzado contra ese bloque (sí se controla cada recibo contra "
+                                  "sus propios totales)."))
     detalle = df.iloc[:corte] if corte is not None else df
     if corte is not None:
         cola = df.iloc[corte:]

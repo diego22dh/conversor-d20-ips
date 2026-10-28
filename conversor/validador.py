@@ -60,6 +60,16 @@ def validar_recibos(recibos: list[Recibo]) -> list[Hallazgo]:
             h.append(Hallazgo("INFO", r.legajo, "CUIL", f"CUIL normalizado sin guiones: {r.cuil_original} → {r.cuil}."))
         if not r.lineas:
             h.append(Hallazgo("ERROR", r.legajo, "Conceptos", "El recibo no tiene conceptos."))
+        else:
+            suma = {"rem": Decimal("0"), "norem": Decimal("0"), "desc": Decimal("0")}
+            for l in r.lineas:
+                suma[l.columna] += l.importe
+            for col, cab, nombre in (("rem", r.rem, "remunerativo"), ("norem", r.norem, "no remunerativo"),
+                                     ("desc", r.descuento, "descuento")):
+                if abs(suma[col] - cab) > Decimal("0.01"):
+                    h.append(Hallazgo("ERROR", r.legajo, "Totales del recibo",
+                                      f"Los conceptos suman {suma[col]} de {nombre} y la cabecera del recibo dice {cab}. "
+                                      "Faltan o sobran líneas respecto del informe."))
     # CUIL con más de un legajo: informativo; si además los recibos son idénticos, advertir
     por_cuil = defaultdict(list)
     for r in recibos:
